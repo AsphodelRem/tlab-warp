@@ -1,6 +1,6 @@
 [reward_model_trainer]
 model_name_or_path = "distilbert/distilbert-base-cased"
-output_dir = "d_bert"
+output_dir = "weights/d_bert"
 per_device_train_batch_size = 64
 num_train_epochs = 1
 gradient_checkpointing = true
@@ -9,15 +9,15 @@ max_length = 512
 
 [warp]
 sft_model_name_or_path = "lvwerra/gpt2-imdb"
-reward_model = "d_bert/checkpoint-196"
-output_dir = "aligned_model"
+reward_model = "weights/d_bert/checkpoint-196"
+output_dir = "weights/aligned_model"
 iterations = 2
 ml_runs = 2
 training_steps = 100
 ema_update_rate = 0.05
 liti_update_rate = 0.5
 beta = 0.25
-batch_size = 64
+batch_size = 32
 lr = 1e-6
 max_length = 20
 
