@@ -50,13 +50,13 @@ class WarpTrainer:
         """
         theta_init = copy.deepcopy(self.sft)
         theta_list = []
-        for i in tqdm(range(self.config['warp']['iterations'])):
+        for i in range(self.config['warp']['iterations']):
             for run in range(self.config['warp']['ml_runs']):
                 theta = copy.deepcopy(theta_init)
                 theta_ema = copy.deepcopy(theta_init)
                 optimizer = torch.optim.Adam(theta.parameters(), lr=self.config['warp']['lr'])
                 data_loader = self._get_dataloader(self.dataset)
-                for step in tqdm(range(self.config['warp']['training_steps'])):
+                for step in tqdm(range(self.config['warp']['training_steps']), desc=f'Iteration: {i}, policy: {run}'):
                     batched_prompts = next(iter(data_loader))
                     
                     optimizer.zero_grad()
@@ -156,7 +156,7 @@ class WarpTrainer:
             padding=True,
         ).to(self.device)
         
-        outputs = model.generate(**model_input, max_length=20)
+        outputs = model.generate(**model_input, max_length=20, pad_token_id=tokenizer.eos_token_id)
         decoded_completions = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
         log_probs = self._get_word_probs(model, outputs)
         
