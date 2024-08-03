@@ -10,7 +10,6 @@ from transformers import (
     AutoModelForCausalLM
 )
 
-from warp_config import WarpConfig
         
 class WarpTrainer:
     def __init__(
@@ -19,7 +18,7 @@ class WarpTrainer:
         sft_tokenizer: AutoTokenizer,
         reward_model: AutoModelForSequenceClassification, 
         reward_model_tokenizer: AutoTokenizer,
-        warp_config: WarpConfig,
+        warp_config: map,
         dataset: list[str]
     ):
         """
@@ -30,7 +29,7 @@ class WarpTrainer:
         - sft_tokenizer (AutoTokenizer): The tokenizer for the sft model.
         - reward_model (AutoModelForSequenceClassification): The reward model.
         - reward_model_tokenizer (AutoTokenizer): The tokenizer for the reward model.
-        - warp_config (WarpConfig): Configuration for the training process.
+        - warp_config (map): Configuration for the training process.
         - dataset (list[str]): Dataset used for training.
         """
         self.config = warp_config
@@ -45,12 +44,9 @@ class WarpTrainer:
         self.sft.to(self.device)
         self.reward_model.to(self.device)
       
-    def train(self) -> AutoModelForCausalLM:
+    def train(self):
         """
         Run the alignment process.
-
-        Returns:
-        - AutoModelForCausalLM: The final aligned model.
         """
         theta_init = copy.deepcopy(self.sft)
         theta_list = []
@@ -108,6 +104,7 @@ class WarpTrainer:
         if save_dir is None:
             save_dir = self.config['warp']['output_dir']
         self.sft.save_pretrained(save_dir, from_pt=True)
+        self.sft_tokenizer.save_pretrained(save_dir)
 
     def _get_dataloader(
         self, 
