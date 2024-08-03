@@ -19,7 +19,7 @@ def create_default_config():
             'ml_runs': 2, 
             'training_steps': 100, 
             'ema_update_rate': 0.05, 
-            'liti_update_rate': 0.05,
+            'liti_update_rate': 0.5,
             'beta': 0.25, 
             'batch_size': 64,
             'lr': 1e-6,
