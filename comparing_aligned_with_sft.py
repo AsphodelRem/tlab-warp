@@ -13,6 +13,15 @@ from config_utils import load_config
 from warp import WarpTrainer
 
 
+"""
+Comparing aligned model with reference (SFT)
+Usage:
+    python3 comparing_aligned_with_sft.py \
+    --path_to_aligned_model path/to/aligned/model \
+    --config path/to/config.toml
+"""
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_aligned_model', type=str)
@@ -20,14 +29,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = load_config(args.config)
-
-    # Load SFT and aligned models
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.path_to_aligned_model,
-        use_fast=True, 
-        padding_side='left',
-    )
-    tokenizer.pad_token = tokenizer.eos_token
 
     # Get WarpTrainer class just for using generate_completion and compute_reward functions
     warp_trainer = WarpTrainer(config, None)
@@ -44,9 +45,8 @@ if __name__ == '__main__':
     # Get dataset
     test_sample = get_non_overlapping_subsamples_for_warp(config)
 
-    aligned_model_mean_rewards = []
-    sft_model_mean_rewards = []
-    kl_divs = []
+    # Measuring values on 5 random subsamples
+    kl_divs, aligned_model_mean_rewards, sft_model_mean_rewards = [], [], []
     for sample in tqdm(test_sample):
         # Get generations
         with torch.no_grad():
@@ -83,9 +83,8 @@ if __name__ == '__main__':
 
     aligned_model_mean_rewards = torch.tensor(aligned_model_mean_rewards)
     sft_model_mean_rewards = torch.tensor(sft_model_mean_rewards)
+    
     print(f'Aligned model mean reward: {torch.mean(aligned_model_mean_rewards)}')
     print(f'SFT model mean reward: {torch.mean(sft_model_mean_rewards)}')
-
     print(f'RMSE: {torch.sqrt(torch.mean((aligned_model_mean_rewards - sft_model_mean_rewards)**2))}')
-
     print(f'Mean KL: {torch.mean(torch.tensor(kl_divs))}')

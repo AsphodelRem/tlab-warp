@@ -12,6 +12,11 @@ from dataset_utils import get_datasets_for_warp, get_non_overlapping_subsamples_
 from config_utils import load_config
 
 
+"""
+Studying the impact of number of training steps on mean reward and KL. 
+Chosen values = 50, 100, 150.
+"""
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str)
@@ -34,8 +39,8 @@ if __name__ == '__main__':
         
         warp_trainer.train()
 
-        kl_divs = []
-        aligned_model_mean_rewards = []
+        # Measuring values on 5 random subsamples
+        aligned_model_mean_rewards, kl_divs = [], []
         for sample in tqdm(test_samples):
             with torch.no_grad():
                 aligned_model_output, aligned_logprobs = warp_trainer._generate_completion(
