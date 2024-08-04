@@ -14,10 +14,6 @@ from transformers import (
 class WarpTrainer:
     def __init__(
         self, 
-        sft: AutoModelForCausalLM, 
-        sft_tokenizer: AutoTokenizer,
-        reward_model: AutoModelForSequenceClassification, 
-        reward_model_tokenizer: AutoTokenizer,
         warp_config: map,
         dataset: list[str]
     ):
@@ -25,24 +21,34 @@ class WarpTrainer:
         Initializes the WarpTrainer.
     
         Args:
-        - sft (AutoModelForCausalLM): The model to be aligned.
-        - sft_tokenizer (AutoTokenizer): The tokenizer for the sft model.
-        - reward_model (AutoModelForSequenceClassification): The reward model.
-        - reward_model_tokenizer (AutoTokenizer): The tokenizer for the reward model.
-        - warp_config (map): Configuration for the training process.
+        - warp_config (map): Configuration for the training (alignment) process.
         - dataset (list[str]): Dataset used for training.
         """
+        
         self.config = warp_config
-        self.sft = sft
-        self.sft_tokenizer = sft_tokenizer
-        self.reward_model_tokenizer = reward_model_tokenizer
-        self.reward_model = reward_model
         self.dataset = dataset
-        
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+        # Get models and tokenizers
+        self.sft_tokenizer = AutoTokenizer.from_pretrained(
+            self.config['warp']['sft_model_name_or_path'],
+            use_fast=True, 
+            padding_side='left',
+        )
+        self.sft_tokenizer.pad_token = self.sft_tokenizer.eos_token
         
-        self.sft.to(self.device)
-        self.reward_model.to(self.device)
+        self.sft = AutoModelForCausalLM.from_pretrained(
+           self.config['warp']['sft_model_name_or_path']
+        )
+        
+        self.reward_model_tokenizer  = AutoTokenizer.from_pretrained(
+            self.config['warp']['reward_model'], 
+            use_fast=True
+        )
+        self.reward_model = AutoModelForSequenceClassification.from_pretrained(
+            self.config['warp']['reward_model'], 
+            num_labels=1
+        ).to(self.device)
       
     def train(self):
         """
@@ -52,8 +58,8 @@ class WarpTrainer:
         theta_list = []
         for i in range(self.config['warp']['iterations']):
             for run in range(self.config['warp']['ml_runs']):
-                theta = copy.deepcopy(theta_init)
-                theta_ema = copy.deepcopy(theta_init)
+                theta = copy.deepcopy(theta_init).to(self.device)
+                theta_ema = copy.deepcopy(theta_init).to(self.device)
                 optimizer = torch.optim.Adam(theta.parameters(), lr=self.config['warp']['lr'])
                 data_loader = self._get_dataloader(self.dataset)
                 for step in tqdm(range(self.config['warp']['training_steps']), desc=f'Iteration: {i}, policy: {run}'):
@@ -89,17 +95,18 @@ class WarpTrainer:
                     gp.backward()
                     optimizer.step()
                     
-                theta_list.append(theta)
+                theta_list.append(theta.to('cpu'))
                     
             theta_slerp = self._slerp(theta_init, theta_list, 1 / self.config['warp']['ml_runs'])
             theta_list.clear()
             theta_init = self._models_averaging(theta_init, theta_slerp, self.config['warp']['liti_update_rate'])
 
         self.sft = self._models_averaging(self.sft, theta_slerp, self.config['warp']['liti_update_rate'])
+        self.sft.to(self.device)
 
     def save_model(self, save_dir: str=None) -> None:
         """
-        Save the aligned model.
+        Save the aligned model
         """
         if save_dir is None:
             save_dir = self.config['warp']['output_dir']
@@ -312,6 +319,7 @@ class WarpTrainer:
         Returns:
         - AutoModelForCausalLM: The interpolated model.
         """
+        slerp_state_dict = {}
         for key in theta_init.state_dict().keys(): 
             theta_init_vec = theta_init.state_dict()[key]
             v_0 = theta_m_list[0].state_dict()[key]
@@ -324,9 +332,9 @@ class WarpTrainer:
             delta = torch.sin((1.0 - lam) * omega) / \
                 torch.sin(omega) * delta_0 + torch.sin(lam * omega) / torch.sin(omega) * delta_1
             
-            theta_init.state_dict()[key] += delta
+            slerp_state_dict[key] = theta_init.state_dict()[key] + delta
             
         return AutoModelForCausalLM.from_pretrained(
             self.config['warp']['sft_model_name_or_path'],
-            state_dict=theta_init.state_dict()
+            state_dict=slerp_state_dict
         )
