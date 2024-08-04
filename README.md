@@ -29,6 +29,8 @@ pip3 install -r requirements.txt
 # Train reward model
 python3 reward_model_train.py --config configs/config.toml
 
+# Set path to saved reward model in config.toml if nesessary ([warp][reward_model])
+
 # Train (align) SFT model
 python3 warp_train.py --config configs/config.toml
 
