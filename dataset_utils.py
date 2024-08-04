@@ -1,8 +1,8 @@
-from tqdm import tqdm
+import random
 from datasets import load_dataset
 
 
-def get_datasets_for_warp(config):
+def get_datasets_for_warp(config: dict):
     """
     Load datasets and prepare training and testing prompts.
     
@@ -15,14 +15,42 @@ def get_datasets_for_warp(config):
     dataset = load_dataset(config["dataset"]["dataset_name"])
 
     max_length = config["warp"]["max_length"]
+    max_test_length = config['dataset']['test_max_length']
     max_test_samples = config["dataset"]["test_max_size"]
 
     train_prompts = [text[:max_length] for text in dataset["train"]["text"]]
-    test_prompts = [text[:max_length] for text in dataset["test"]["text"][:max_test_samples]]
+    test_prompts = [text[:max_test_length] for text in dataset["test"]["text"][:max_test_samples]]
 
     return train_prompts, test_prompts
 
-def get_datasets_for_reward_model(config, tokenizer):
+def get_non_overlapping_subsamples_for_warp(config: dict, num_subsamples: int=5):
+   """
+    Generate non-overlapping subsamples for testing.
+
+    Args:
+    - config (dict):  Config
+    - num_subsamples (int, default 5): The number of non-overlapping subsamples to create.
+
+    Returns:
+    - list: A list of subsamples, where each subsample is a list of texts.
+    """
+    dataset = load_dataset(config["dataset"]["dataset_name"])
+
+    max_test_samples = config['dataset']['test_max_size']
+    max_test_length = config['dataset']['test_max_length']
+    
+    test_prompts = [text[:max_test_length] for text in dataset['test']['text']]
+    lst_copy = test_prompts.copy()
+    subsamples = []
+    
+    for _ in range(num_subsamples):
+        subsample = random.sample(lst_copy, max_test_samples)
+        subsamples.append(subsample)
+        lst_copy = [x for x in lst_copy if x not in subsample]
+    
+    return subsamples
+
+def get_datasets_for_reward_model(config: dict, tokenizer):
     """
     Prepare datasets for training a reward model by tokenizing and creating pairs of samples.
     
