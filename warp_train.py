@@ -6,9 +6,9 @@ from transformers import (
     AutoModelForCausalLM
 )
 
-from src.warp import WarpTrainer
-from src.dataset_utils import get_datasets_for_warp
-from src.config_utils import load_config
+from warp import WarpTrainer
+from dataset_utils import get_datasets_for_warp
+from config_utils import load_config
 
 
 """
