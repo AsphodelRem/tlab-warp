@@ -12,7 +12,7 @@ from config_utils import load_config
 def generate_text(model, tokenizer, prompt):
     model_input = tokenizer(prompt, return_tensors='pt', padding=True, truncation=True)
     with torch.no_grad():
-        outputs = model.generate(**model_input, max_length=30)
+        outputs = model.generate(**model_input, max_length=20)
     decoded_outputs = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
     print(decoded_outputs)
 

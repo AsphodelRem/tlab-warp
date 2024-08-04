@@ -8,8 +8,8 @@ from trl import (
     RewardConfig,
 )
 
-from dataset_utils import get_datasets_for_reward_model
-from config_utils import load_config
+from src.dataset_utils import get_datasets_for_reward_model
+from src.config_utils import load_config
 
 
 """
