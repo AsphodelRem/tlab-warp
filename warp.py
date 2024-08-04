@@ -319,22 +319,31 @@ class WarpTrainer:
         Returns:
         - AutoModelForCausalLM: The interpolated model.
         """
-        slerp_state_dict = {}
-        for key in theta_init.state_dict().keys(): 
-            theta_init_vec = theta_init.state_dict()[key]
-            v_0 = theta_m_list[0].state_dict()[key]
-            v_1 = theta_m_list[1].state_dict()[key]
-    
-            delta_0 = v_0 - theta_init_vec
-            delta_1 = v_1 - theta_init_vec
-            
-            omega = torch.arccos((delta_0 * delta_1).sum() / (delta_0.norm() * delta_1.norm()))
-            delta = torch.sin((1.0 - lam) * omega) / \
-                torch.sin(omega) * delta_0 + torch.sin(lam * omega) / torch.sin(omega) * delta_1
-            
-            slerp_state_dict[key] = theta_init.state_dict()[key] + delta
-            
+        def _slerpm(shared_init, p_0, p_1):
+            slerp_state_dict = {}
+            for key in shared_init.keys(): 
+                theta_init_vec = shared_init[key]
+                v_0 = p_0[key]
+                v_1 = p_1[key]
+        
+                delta_0 = v_0 - theta_init_vec
+                delta_1 = v_1 - theta_init_vec
+                
+                omega = torch.arccos((delta_0 * delta_1).sum() / (delta_0.norm() * delta_1.norm()))
+                delta = torch.sin((1.0 - lam) * omega) / \
+                    torch.sin(omega) * delta_0 + torch.sin(lam * omega) / torch.sin(omega) * delta_1
+                
+                slerp_state_dict[key] = shared_init[key] + delta
+            return slerp_state_dict
+
+        theta_0 = theta_init.state_dict()
+        theta_1 = theta_m_list[0].state_dict()
+        for i in range(1, len(theta_m_list)):
+            theta_2 = theta_m_list[i].state_dict()
+            result = _slerpm(theta_0, theta_1, theta_2)
+            theta_1 = result
+
         return AutoModelForCausalLM.from_pretrained(
             self.config['warp']['sft_model_name_or_path'],
-            state_dict=slerp_state_dict
+            state_dict=result
         )
