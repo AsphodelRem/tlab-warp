@@ -1,4 +1,3 @@
-import math
 import torch
 import argparse
 from transformers import (
@@ -17,11 +16,8 @@ from warp import WarpTrainer
 Comparing aligned model with reference (SFT)
 Usage:
     python3 comparing_aligned_with_sft.py \
-    --path_to_aligned_model path/to/aligned/model \
     --config path/to/config.toml
 """
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_aligned_model', type=str)
@@ -35,7 +31,7 @@ if __name__ == '__main__':
 
     # Get aligned and sft models
     aligned_model = AutoModelForCausalLM.from_pretrained(
-        args.path_to_aligned_model
+        config['warp']['output_dir']
     ).to(warp_trainer.device)
     
     sft_model = AutoModelForCausalLM.from_pretrained(

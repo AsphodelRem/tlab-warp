@@ -29,15 +29,15 @@ pip3 install -r requirements.txt
 # Train reward model
 python3 reward_model_train.py --config configs/config.toml
 
-# Set path to saved reward model in config.toml if nesessary ([warp][reward_model])
+# Set path to saved reward model in config.toml if nesessary (['warp']['reward_model'])
 
 # Train (align) SFT model
 python3 warp_train.py --config configs/config.toml
 
 # Inference (set user_input if you want to write your prompts)
-python3 inference.py --path_to_align_model weights/aligned_model --config configs/config.toml --user_input True
+python3 inference.py --config configs/config.toml --user_input True
 
 # Run experiments
 python3 hyperparameters_experiment.py --config configs/config.toml 
-python3 comparing_aligned_with_sft.py --path_to_aligned_model weights/aligned_model --config configs/config.toml 
+python3 comparing_aligned_with_sft.py --config configs/config.toml 
 ```

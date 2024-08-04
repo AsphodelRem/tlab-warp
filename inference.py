@@ -15,11 +15,11 @@ def generate_text(model, tokenizer, prompt):
         outputs = model.generate(**model_input, max_length=20)
     decoded_outputs = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
     print(decoded_outputs)
+    
 
 """
 Usage:
     python3 inference.py \
-        --path_to_aligned_model path/to/aligned/model \
         --config path/to/config.toml \
         --user_input True
 """
@@ -33,14 +33,14 @@ if __name__ == '__main__':
     config = load_config(args.config)
 
     tokenizer = AutoTokenizer.from_pretrained(
-        args.path_to_aligned_model,
+        config['warp']['output_dir'],
         use_fast=True, 
         padding_side='left',
     )
     tokenizer.pad_token = tokenizer.eos_token
     
     model = AutoModelForCausalLM.from_pretrained(
-       args.path_to_aligned_model
+        config['warp']['output_dir']
     )
 
     _, test_dataset = get_datasets_for_warp(config)
