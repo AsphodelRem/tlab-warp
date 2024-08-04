@@ -25,4 +25,8 @@ python3 warp_train.py --config configs/config.toml
 
 # Inference (set user_input if you want to write your prompts)
 python3 inference.py --path_to_align_model weights/aligned_model --config configs/config.toml --user_input True
+
+# Run experiments
+python3 hyperparameters_experiment.py --config configs/config.toml 
+python3 comparing_aligned_with_sft.py --path_to_aligned_model weights/aligned_model --config configs/config.toml 
 ```
