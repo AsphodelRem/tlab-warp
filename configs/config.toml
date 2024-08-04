@@ -17,10 +17,11 @@ training_steps = 100
 ema_update_rate = 0.05
 liti_update_rate = 0.5
 beta = 0.25
-batch_size = 32
-lr = 1e-6
-max_length = 20
+batch_size = 64
+lr = 1e-5
+max_length = 15
 
 [dataset]
 dataset_name = "stanfordnlp/imdb"
 test_max_size = 100
+test_max_length = 5
