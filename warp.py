@@ -91,7 +91,7 @@ class WarpTrainer:
                         sft_log_probs
                     )
         
-                    gp = self._compute_policy_gradient(theta_log_probs, kl_reg_reward)
+                    gp = self._loss(theta_log_probs, kl_reg_reward)
                     gp.backward()
                     optimizer.step()
                     
@@ -277,14 +277,14 @@ class WarpTrainer:
         
         return torch.mean(reward - self.config['warp']['beta'] * kl_div)
         
-    def _compute_policy_gradient(
+    def _loss(
         self, 
         log_probs: torch.Tensor, 
         kl_reg_reward: torch.Tensor, 
         reduce: str='mean'
     ) -> torch.Tensor:
         """
-        Compute the policy gradient.
+        Calculate policy loss
     
         Args:
         - log_probs (torch.Tensor): Log probabilities of the actions.
@@ -292,7 +292,7 @@ class WarpTrainer:
         - reduce (str): Aggregation method ('sum' or 'mean').
     
         Returns:
-        - torch.Tensor: Policy gradient value.
+        - torch.Tensor: Loss.
         """
         
         if reduce == 'sum':
